@@ -1,5 +1,7 @@
-﻿using global::SistemaEstoque.API.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using SistemaEstoque.API.Data;
+using SistemaEstoque.API.Models;
 
 namespace SistemaEstoque.API.Controllers;
 
@@ -7,39 +9,41 @@ namespace SistemaEstoque.API.Controllers;
 [Route("api/[controller]")]
 public class ProdutosController : ControllerBase
 {
-    private static List<Produto> produtos = new List<Produto>();
+    private readonly AppDbContext _context;
+
+    public ProdutosController(AppDbContext context)
+    {
+        _context = context;
+    }
 
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get()
     {
+        var produtos = await _context.Produtos.ToListAsync();
         return Ok(produtos);
     }
 
     [HttpGet("{id}")]
-    public IActionResult GetById(int id)
+    public async Task<IActionResult> GetById(int id)
     {
-        var produto = produtos.FirstOrDefault(p => p.Id == id);
-
+        var produto = await _context.Produtos.FindAsync(id);
         if (produto == null)
             return NotFound();
-
         return Ok(produto);
     }
 
     [HttpPost]
-    public IActionResult Post([FromBody] Produto produto)
+    public async Task<IActionResult> Post([FromBody] Produto produto)
     {
-        produto.Id = produtos.Count + 1;
-        produtos.Add(produto);
-
-        return CreatedAtAction(nameof(Get), new { id = produto.Id }, produto);
+        _context.Produtos.Add(produto);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetById), new { id = produto.Id }, produto);
     }
 
     [HttpPut("{id}")]
-    public IActionResult Put(int id, [FromBody] Produto produtoAtualizado)
+    public async Task<IActionResult> Put(int id, [FromBody] Produto produtoAtualizado)
     {
-        var produto = produtos.FirstOrDefault(p => p.Id == id);
-
+        var produto = await _context.Produtos.FindAsync(id);
         if (produto == null)
             return NotFound();
 
@@ -47,20 +51,19 @@ public class ProdutosController : ControllerBase
         produto.Preco = produtoAtualizado.Preco;
         produto.Quantidade = produtoAtualizado.Quantidade;
 
+        await _context.SaveChangesAsync();
         return NoContent();
     }
 
     [HttpDelete("{id}")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
-        var produto = produtos.FirstOrDefault(p => p.Id == id);
-
+        var produto = await _context.Produtos.FindAsync(id);
         if (produto == null)
             return NotFound();
 
-        produtos.Remove(produto);
-
+        _context.Produtos.Remove(produto);
+        await _context.SaveChangesAsync();
         return NoContent();
     }
-    
 }
