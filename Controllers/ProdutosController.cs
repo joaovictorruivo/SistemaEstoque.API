@@ -43,10 +43,16 @@ public class ProdutosController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Put(int id, [FromBody] Produto produtoAtualizado)
     {
-        var produto = await _context.Produtos.FindAsync(id);
-        if (produto == null)
-            return NotFound();
+        // PROTEÇÃO EXTRA: Verifica se o ID da URL é o mesmo do objeto enviado
+        if (id != produtoAtualizado.Id)
+        {
+            return BadRequest("O ID da URL não coincide com o ID do produto.");
+        }
 
+        var produto = await _context.Produtos.FindAsync(id);
+        if (produto == null) return NotFound();
+
+        // Seu código de atualização que já está nos prints...
         produto.Nome = produtoAtualizado.Nome;
         produto.Preco = produtoAtualizado.Preco;
         produto.Quantidade = produtoAtualizado.Quantidade;
