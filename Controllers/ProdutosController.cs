@@ -19,16 +19,23 @@ public class ProdutosController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> Get()
     {
-        var produtos = await _context.Produtos.ToListAsync();
+        // O .Include() é o comando que faz o JOIN com a tabela de Categorias
+        var produtos = await _context.Produtos
+                                     .Include(p => p.Categoria)
+                                     .ToListAsync();
         return Ok(produtos);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var produto = await _context.Produtos.FindAsync(id);
+        var produto = await _context.Produtos
+                                    .Include(p => p.Categoria)
+                                    .FirstOrDefaultAsync(p => p.Id == id);
+
         if (produto == null)
             return NotFound();
+
         return Ok(produto);
     }
 
