@@ -34,5 +34,44 @@ namespace SistemaEstoque.API.Controllers
             // Retorna 201 Created
             return CreatedAtAction(nameof(Get), new { id = categoria.Id }, categoria);
         }
+
+        // PUT: api/Categorias/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(int id, [FromBody] Categoria categoriaAtualizada)
+        {
+            // Verifica se o engraçadinho não mandou IDs diferentes
+            if (id != categoriaAtualizada.Id)
+            {
+                return BadRequest("O ID da URL não coincide com o ID da categoria.");
+            }
+
+            var categoria = await _context.Categorias.FindAsync(id);
+            if (categoria == null)
+            {
+                return NotFound();
+            }
+
+            // Atualiza o nome
+            categoria.Nome = categoriaAtualizada.Nome;
+
+            await _context.SaveChangesAsync();
+            return NoContent(); // 204 - Sucesso, mas não tem nada para retornar na tela
+        }
+
+        // DELETE: api/Categorias/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var categoria = await _context.Categorias.FindAsync(id);
+            if (categoria == null)
+            {
+                return NotFound();
+            }
+
+            _context.Categorias.Remove(categoria);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 }
