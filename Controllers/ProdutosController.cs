@@ -79,4 +79,23 @@ public class ProdutosController : ControllerBase
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+    // GET: api/Produtos/Categoria/1
+    [HttpGet("Categoria/{categoriaId}")]
+    public async Task<IActionResult> GetByCategoria(int categoriaId)
+    {
+        // Vamos buscar na tabela de Produtos onde o CategoriaId seja igual ao que o usuário pediu
+        var produtos = await _context.Produtos
+                                     .Include(p => p.Categoria)
+                                     .Where(p => p.CategoriaId == categoriaId)
+                                     .ToListAsync();
+
+        // Se a lista vier vazia, retornamos um 404 amigável
+        if (!produtos.Any())
+        {
+            return NotFound("Nenhum produto encontrado para esta categoria.");
+        }
+
+        return Ok(produtos);
+    }
 }
