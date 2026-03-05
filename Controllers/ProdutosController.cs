@@ -98,4 +98,31 @@ public class ProdutosController : ControllerBase
 
         return Ok(produtos);
     }
+
+    // PUT: api/Produtos/5/BaixaEstoque
+    [HttpPut("{id}/BaixaEstoque")]
+    public async Task<IActionResult> BaixaEstoque(int id, [FromBody] int quantidadeVendida)
+    {
+        var produto = await _context.Produtos.FindAsync(id);
+
+        // Se o produto não existir, retorna erro 404
+        if (produto == null)
+        {
+            return NotFound("Produto não encontrado.");
+        }
+
+        // Regra de Negócio: Não pode vender mais do que tem no estoque!
+        if (produto.Quantidade < quantidadeVendida)
+        {
+            return BadRequest($"Estoque insuficiente. Temos apenas {produto.Quantidade} unidades.");
+        }
+
+        // Subtrai a quantidade vendida do estoque atual
+        produto.Quantidade -= quantidadeVendida;
+
+        await _context.SaveChangesAsync();
+
+        // Retorna uma mensagem de sucesso bacana
+        return Ok(new { mensagem = "Venda realizada com sucesso!", estoqueAtual = produto.Quantidade });
+    }
 }
