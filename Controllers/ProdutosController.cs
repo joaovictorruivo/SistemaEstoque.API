@@ -125,4 +125,27 @@ public class ProdutosController : ControllerBase
         // Retorna uma mensagem de sucesso bacana
         return Ok(new { mensagem = "Venda realizada com sucesso!", estoqueAtual = produto.Quantidade });
     }
+    // GET: api/Produtos/Busca?nome=mouse
+    [HttpGet("Busca")]
+    public async Task<IActionResult> BuscarPorNome([FromQuery] string nome)
+    {
+        // Verifica se o usuário mandou o texto vazio
+        if (string.IsNullOrWhiteSpace(nome))
+        {
+            return BadRequest("O termo de busca não pode ser vazio.");
+        }
+
+        // Busca no banco produtos que contenham aquele texto no nome
+        var produtos = await _context.Produtos
+                                     .Include(p => p.Categoria)
+                                     .Where(p => p.Nome.Contains(nome))
+                                     .ToListAsync();
+
+        if (!produtos.Any())
+        {
+            return NotFound("Nenhum produto encontrado com esse nome.");
+        }
+
+        return Ok(produtos);
+    }
 }
