@@ -148,4 +148,28 @@ public class ProdutosController : ControllerBase
 
         return Ok(produtos);
     }
+
+    // GET: api/Produtos/FiltroPreco?min=50&max=200
+    [HttpGet("FiltroPreco")]
+    public async Task<IActionResult> FiltrarPorPreco([FromQuery] decimal min, [FromQuery] decimal max)
+    {
+        // Regra de negócio: O mínimo não pode ser maior que o máximo
+        if (min > max)
+        {
+            return BadRequest("O preço mínimo não pode ser maior que o preço máximo.");
+        }
+
+        // Busca no banco os produtos que estão dentro dessa faixa de preço
+        var produtos = await _context.Produtos
+                                     .Include(p => p.Categoria)
+                                     .Where(p => p.Preco >= min && p.Preco <= max)
+                                     .ToListAsync();
+
+        if (!produtos.Any())
+        {
+            return NotFound("Nenhum produto encontrado nessa faixa de preço.");
+        }
+
+        return Ok(produtos);
+    }
 }
