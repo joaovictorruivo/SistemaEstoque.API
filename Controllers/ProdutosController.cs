@@ -172,4 +172,22 @@ public class ProdutosController : ControllerBase
 
         return Ok(produtos);
     }
+
+    // GET: api/Produtos/Estatisticas
+    [HttpGet("Estatisticas")]
+    public async Task<IActionResult> GetEstatisticas()
+    {
+        // Conta quantos produtos existem no banco
+        var totalProdutos = await _context.Produtos.CountAsync();
+
+        // Calcula o valor total do estoque (Preço x Quantidade de cada produto)
+        var valorTotalEstoque = await _context.Produtos.SumAsync(p => p.Preco * p.Quantidade);
+
+        // Retorna um objeto anônimo formatado bonitinho
+        return Ok(new
+        {
+            TotalProdutosCadastrados = totalProdutos,
+            ValorTotalDoEstoque = valorTotalEstoque
+        });
+    }
 }
