@@ -16,35 +16,53 @@ public class ProdutosController : ControllerBase
         _context = context;
     }
 
+    // GET: api/Produtos?numeroPagina=1&tamanhoPagina=5
     [HttpGet]
-    public async Task<IActionResult> Get()
+    public async Task<IActionResult> Get([FromQuery] int numeroPagina = 1, [FromQuery] int tamanhoPagina = 10)
     {
-        // O .Include() é o comando que faz o JOIN com a tabela de Categorias
+        // Travas de segurança: não existe página 0 e ninguém pode pedir 1 milhão de itens de uma vez
+        if (numeroPagina < 1) numeroPagina = 1;
+        if (tamanhoPagina < 1) tamanhoPagina = 1;
+        if (tamanhoPagina > 50) tamanhoPagina = 50; // Limite máximo por página
+
+        // Conta o total de produtos para avisar o Front-end
+        var totalItens = await _context.Produtos.CountAsync();
+        var totalPaginas = (int)Math.Ceiling(totalItens / (double)tamanhoPagina);
+
+        // Faz a busca usando Skip e Take
         var produtos = await _context.Produtos
                                      .Include(p => p.Categoria)
+                                     .Skip((numeroPagina - 1) * tamanhoPagina)
+                                     .Take(tamanhoPagina)
                                      .ToListAsync();
-        return Ok(produtos);
+
+        // Retorna os dados empacotados com as informações da paginação (Recrutador ama isso!)
+        return Ok(new
+        {
+            TotalItens = totalItens,
+            TotalPaginas = totalPaginas,
+            PaginaAtual = numeroPagina,
+            TamanhoPagina = tamanhoPagina,
+            Dados = produtos
+        });
     }
 
+    // GET: api/Produtos/5
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
+        // Procura o produto pelo ID e já traz a Categoria associada
         var produto = await _context.Produtos
                                     .Include(p => p.Categoria)
                                     .FirstOrDefaultAsync(p => p.Id == id);
 
+        // Se o ID não existir, devolve um erro 404
         if (produto == null)
-            return NotFound();
+        {
+            return NotFound("Produto não encontrado.");
+        }
 
         return Ok(produto);
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Post([FromBody] Produto produto)
-    {
-        _context.Produtos.Add(produto);
-        await _context.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetById), new { id = produto.Id }, produto);
     }
 
     [HttpPut("{id}")]
